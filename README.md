@@ -34,6 +34,8 @@ gitlab-ci-local
 - **Node.js** - Download from [nodejs.org](https://nodejs.org/)
 - **Docker Desktop** - Download from [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
+Find more information at https://github.com/firecow/gitlab-ci-local
+
 ### For GitLab Runner Setup (Educational Only)
 - **Docker Desktop for Windows** - Ensure it's running with Linux containers
 - **WSL 2** - Run `wsl --install` in PowerShell as Administrator
