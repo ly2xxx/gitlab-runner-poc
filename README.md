@@ -64,6 +64,9 @@ gitlab-ci-local --list
 
 # Run with variables
 gitlab-ci-local --variable NODE_VERSION=18
+
+# Check help
+gitlab-ci-local --help
 ```
 
 ### Why use gitlab-ci-local?
