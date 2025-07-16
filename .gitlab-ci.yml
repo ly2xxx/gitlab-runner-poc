@@ -1,0 +1,27 @@
+stages:
+  - test
+  - build
+
+variables:
+  NODE_VERSION: "18"
+
+test:
+  stage: test
+  image: node:18
+  script:
+    - echo "Running tests..."
+    - npm --version
+    - node --version
+    - echo "Tests completed successfully!"
+
+build:
+  stage: build
+  image: node:18
+  script:
+    - echo "Building application..."
+    - npm --version
+    - echo "Build completed successfully!"
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour

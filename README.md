@@ -1,52 +1,95 @@
-# GitLab Runner POC
+# GitLab CI/CD Local Development POC
 
-This project demonstrates how to run GitLab CI/CD pipelines locally using GitLab Runner in Docker on Windows 11.
+This project demonstrates two approaches for running GitLab CI/CD pipelines locally on Windows 11:
+
+1. **gitlab-ci-local** (Recommended for local development) - Simulates GitLab CI/CD without requiring a GitLab Runner service
+2. **GitLab Runner in Docker** (Educational/Infrastructure learning) - Sets up actual GitLab Runner infrastructure
 
 ## Table of Contents
+- [Quick Start (Recommended)](#quick-start-recommended)
 - [Prerequisites](#prerequisites)
-- [Setup Instructions](#setup-instructions)
-- [Running GitLab Runner](#running-gitlab-runner)
-- [Local Pipeline Execution](#local-pipeline-execution)
+- [Method 1: gitlab-ci-local (Recommended)](#method-1-gitlab-ci-local-recommended)
+- [Method 2: GitLab Runner Setup (Educational)](#method-2-gitlab-runner-setup-educational)
 - [Example Usage](#example-usage)
 - [Troubleshooting](#troubleshooting)
 - [Resources](#resources)
 
+## Quick Start (Recommended)
+
+For most local development needs, use `gitlab-ci-local`:
+
+```cmd
+# Install Node.js from nodejs.org, then:
+npm install -g gitlab-ci-local
+
+# In your project directory with .gitlab-ci.yml:
+gitlab-ci-local
+```
+
+**That's it!** No GitLab Runner container needed for local development.
+
 ## Prerequisites
 
-Before starting, ensure you have the following installed on your Windows 11 machine:
+### For gitlab-ci-local (Recommended)
+- **Node.js** - Download from [nodejs.org](https://nodejs.org/)
+- **Docker Desktop** - Download from [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### 1. Docker Desktop for Windows
-- Download from [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- Install and ensure it's running
-- Make sure Docker is using Linux containers (not Windows containers)
+### For GitLab Runner Setup (Educational Only)
+- **Docker Desktop for Windows** - Ensure it's running with Linux containers
+- **WSL 2** - Run `wsl --install` in PowerShell as Administrator
+- **Git** (Optional) - Download from [Git for Windows](https://git-scm.com/download/win)
 
-### 2. WSL 2 (Windows Subsystem for Linux)
-Open PowerShell as Administrator and run:
-```powershell
-wsl --install
+## Method 1: gitlab-ci-local (Recommended)
+
+**Use this method for actual local development and testing.**
+
+### Installation
+```cmd
+# Install Node.js from nodejs.org first, then:
+npm install -g gitlab-ci-local
 ```
-Restart your computer if prompted.
 
-### 3. Git (Optional but recommended)
-- Download from [Git for Windows](https://git-scm.com/download/win)
+### Usage
+```cmd
+# In your project directory with .gitlab-ci.yml
+gitlab-ci-local
 
-## Setup Instructions
+# Run specific job
+gitlab-ci-local --job test
 
-### Step 1: Verify Docker Installation
-Open PowerShell or Command Prompt and verify Docker is working:
+# List all available jobs
+gitlab-ci-local --list
+
+# Run with variables
+gitlab-ci-local --variable NODE_VERSION=18
+```
+
+### Why use gitlab-ci-local?
+- ✅ **Simple setup** - No GitLab Runner service required
+- ✅ **Fast execution** - Direct Docker integration
+- ✅ **Perfect for development** - Test your `.gitlab-ci.yml` locally
+- ✅ **Windows-friendly** - Designed for local development
+
+## Method 2: GitLab Runner Setup (Educational)
+
+**Use this method only for learning about GitLab CI/CD infrastructure or testing actual runner registration.**
+
+⚠️ **Note**: This method does NOT enable local pipeline execution. It's for educational purposes and understanding GitLab Runner infrastructure.
+
+### GitLab Runner Container Setup
+
+1. **Verify Docker Installation**
 ```cmd
 docker --version
 docker run hello-world
 ```
 
-### Step 2: Pull GitLab Runner Docker Image
+2. **Pull GitLab Runner Docker Image**
 ```cmd
 docker pull gitlab/gitlab-runner:latest
 ```
 
-### Step 3: Create GitLab Runner Container
-Create a persistent GitLab Runner container:
-
+3. **Create GitLab Runner Container**
 ```cmd
 docker run -d --name gitlab-runner --restart always ^
   -v /var/run/docker.sock:/var/run/docker.sock ^
@@ -54,69 +97,28 @@ docker run -d --name gitlab-runner --restart always ^
   gitlab/gitlab-runner:latest
 ```
 
-**For PowerShell, use:**
-```powershell
-docker run -d --name gitlab-runner --restart always `
-  -v /var/run/docker.sock:/var/run/docker.sock `
-  -v gitlab-runner-config:/etc/gitlab-runner `
-  gitlab/gitlab-runner:latest
+4. **Create GitLab Runner Configuration**
+```cmd
+docker exec gitlab-runner bash -c "mkdir -p /etc/gitlab-runner && cat > /etc/gitlab-runner/config.toml << EOF
+concurrent = 1
+check_interval = 0
+
+[session_server]
+  session_timeout = 1800
+EOF"
 ```
 
-### Step 4: Verify Installation
-Check that the container is running:
+5. **Restart and Verify**
 ```cmd
+docker restart gitlab-runner
 docker ps
 ```
 
-You should see the `gitlab-runner` container in the list.
-
-## Running GitLab Runner
-
-### Check GitLab Runner Version
-```cmd
-docker exec gitlab-runner gitlab-runner --version
-```
-
-### View Available Commands
-```cmd
-docker exec gitlab-runner gitlab-runner --help
-```
-
-## Local Pipeline Execution
-
-### Method 1: Using Docker Exec (Recommended)
-
-Navigate to your project directory containing `.gitlab-ci.yml` and run:
-
-```cmd
-# Execute a specific job
-docker exec -it --workdir /builds/project gitlab-runner gitlab-runner exec docker job_name
-
-# Example: Run a job called "test"
-docker exec -it gitlab-runner gitlab-runner exec docker test
-```
-
-### Method 2: Mount Project Directory
-
-For easier access, you can mount your project directory:
-
-```cmd
-# Stop the existing container
-docker stop gitlab-runner
-docker rm gitlab-runner
-
-# Create new container with project mounted
-docker run -d --name gitlab-runner --restart always ^
-  -v /var/run/docker.sock:/var/run/docker.sock ^
-  -v gitlab-runner-config:/etc/gitlab-runner ^
-  -v %cd%:/builds/project ^
-  gitlab/gitlab-runner:latest
-```
-
-Then execute jobs:
-```cmd
-docker exec -it --workdir /builds/project gitlab-runner gitlab-runner exec docker test
-```
+### What This Achieves
+- ✅ **Learning experience** - Understand GitLab Runner infrastructure
+- ✅ **Runner registration testing** - Practice registering with GitLab instances
+- ✅ **CI/CD concepts** - Learn how GitLab CI/CD works behind the scenes
+- ❌ **Local pipeline execution** - This does NOT enable local `.gitlab-ci.yml` testing
 
 ## Example Usage
 
@@ -154,29 +156,25 @@ build:
 ```
 
 ### Running the Example
+
+**Using gitlab-ci-local (Recommended):**
 ```cmd
-# Run the test job
-docker exec -it --workdir /builds/project gitlab-runner gitlab-runner exec docker test
-
-# Run the build job
-docker exec -it --workdir /builds/project gitlab-runner gitlab-runner exec docker build
-```
-
-## Alternative: Using GitLab CI Local Tool
-
-For a more user-friendly experience, you can use `gitlab-ci-local`:
-
-### Install Node.js and npm
-1. Download Node.js from [nodejs.org](https://nodejs.org/)
-2. Install gitlab-ci-local:
-```cmd
+# Install gitlab-ci-local (requires Node.js)
 npm install -g gitlab-ci-local
+
+# Run all jobs
+gitlab-ci-local
+
+# Run specific job
+gitlab-ci-local --job test
 ```
 
-### Run Pipeline Locally
+**Using GitLab Runner container (Educational only):**
+The GitLab Runner container can be used to understand runner concepts, but cannot execute local pipelines. To register it with an actual GitLab instance:
+
 ```cmd
-# In your project directory
-gitlab-ci-local
+# Register with GitLab instance (requires GitLab URL and registration token)
+docker exec -it gitlab-runner gitlab-runner register
 ```
 
 ## Troubleshooting
@@ -215,6 +213,72 @@ wsl --set-default-version 2
 - For Command Prompt: `%cd%` for current directory
 - For PowerShell: `${PWD}` for current directory
 
+**6. Config file errors (ERROR: Failed to load config stat /etc/gitlab-runner/config.toml)**
+This error occurs when GitLab Runner starts without a configuration file. The solution is to create a basic config file:
+
+```cmd
+# Create the configuration file
+docker exec gitlab-runner bash -c "mkdir -p /etc/gitlab-runner && cat > /etc/gitlab-runner/config.toml << EOF
+concurrent = 1
+check_interval = 0
+
+[session_server]
+  session_timeout = 1800
+EOF"
+
+# Restart the container
+docker restart gitlab-runner
+```
+
+**Why this works:**
+- GitLab Runner requires a valid `config.toml` file to start properly
+- The `concurrent = 1` setting allows one job to run at a time
+- The `check_interval = 0` disables automatic job polling (useful for local execution)
+- The `session_server` section enables session management for debugging
+- Even without registered runners, this minimal config allows GitLab Runner to start and accept local execution commands
+
+**7. gitlab-ci-local rsync error on Windows**
+When using `gitlab-ci-local` on Windows, you may encounter an rsync error when copying artifacts:
+
+```
+Error: Command failed with exit code 1: rsync --exclude=/.gitlab-ci-reports/ -a ...
+'rsync' is not recognized as an internal or external command
+```
+
+**Solutions:**
+
+Option 1: Install rsync via WSL/Git Bash
+```cmd
+# If using Git Bash, rsync should be available
+# Run gitlab-ci-local from Git Bash instead of PowerShell
+```
+
+Option 2: Use WSL
+```cmd
+# Run from WSL where rsync is available
+wsl
+cd /mnt/h/code/yl/gitlab-runner-poc
+gitlab-ci-local
+```
+
+Option 3: Disable artifacts (if not needed)
+```yaml
+# In .gitlab-ci.yml, remove or comment out artifacts section
+build:
+  stage: build
+  image: node:18
+  script:
+    - echo "Building application..."
+    - npm --version
+    - echo "Build completed successfully!"
+  # artifacts:
+  #   paths:
+  #     - dist/
+  #   expire_in: 1 hour
+```
+
+**Note:** The jobs still run successfully even with the rsync error. This only affects artifact copying, not the actual pipeline execution.
+
 ### Logs and Debugging
 
 View GitLab Runner logs:
@@ -244,16 +308,19 @@ docker rm gitlab-runner
 docker logs gitlab-runner -f
 ```
 
-### Pipeline Testing
+### Pipeline Testing with gitlab-ci-local
 ```cmd
 # List all jobs in .gitlab-ci.yml
-docker exec --workdir /builds/project gitlab-runner gitlab-runner exec docker --list
+gitlab-ci-local --list
 
-# Run with specific Docker image
-docker exec --workdir /builds/project gitlab-runner gitlab-runner exec docker --docker-image node:18 test
+# Run with specific variables
+gitlab-ci-local --variable NODE_VERSION=18 --job test
 
 # Run with environment variables
-docker exec --workdir /builds/project gitlab-runner gitlab-runner exec docker --env VAR_NAME=value test
+gitlab-ci-local --env VAR_NAME=value --job test
+
+# Show what would run without executing
+gitlab-ci-local --preview
 ```
 
 ## Resources
